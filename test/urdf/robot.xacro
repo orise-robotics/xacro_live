@@ -11,7 +11,7 @@
   <xacro:arg name="wheel_thickness" default="0.1"/>
 
   <!-- Include macros -->
-  <xacro:include filename="wheel.xacro">
+  <xacro:include filename="wheel.xacro"/>
 
   <!-- Base -->
   <link name="base_link">
