@@ -12,12 +12,14 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import os
 import time
 
+import rclpy
+import rclpy.utilities as rosutil
 from watchdog.events import EVENT_TYPE_MODIFIED
 from watchdog.events import FileSystemEventHandler
 from watchdog.observers import Observer
-
 import xacro
 
 
@@ -28,12 +30,13 @@ class XacroEventHandler(FileSystemEventHandler):
         self.root_file = root_file
         try:
             self.doc, self.all_files = self.__process_file()
-        except Exception as ex:
+        except Exception as ex:  # TODO: specify exceptions to be handled
+            print('Invalid xacro file!')
             print(ex)
 
     def on_modified(self, event):
         if event.event_type == EVENT_TYPE_MODIFIED and not event.is_directory:
-            print(f'event type: {event.event_type}  path : {event.src_path}')
+            print(f'event type: {event.event_type}  path : {event.src_path}')  # TODO: remove
 
             if any(True for file in self.all_files if event.src_path.endswith(file)):
                 try:
@@ -41,7 +44,7 @@ class XacroEventHandler(FileSystemEventHandler):
                 except Exception as ex:
                     print(ex)
 
-            print('process!')
+            print('process!')  # TODO: replace by calling service to update the robot description
 
     def __process_file(self):
         opts = {
@@ -56,10 +59,21 @@ class XacroEventHandler(FileSystemEventHandler):
 
 
 if __name__ == '__main__':
-    observer = Observer()
-    event_handler = XacroEventHandler('../test/urdf/robot.xacro')
 
-    observer.schedule(event_handler, path='../test/urdf', recursive=True)
+    rclpy.init()
+    args = rosutil.remove_ros_args()
+
+    # TODO: improve argparsing (add msgs, consider multiple files and folders)
+    assert (len(args) == 2 and os.path.isfile(args[1]))
+
+    filepath = os.path.abspath(args[1])
+    filedir = os.path.dirname(filepath)
+
+    # TODO: consider multiple observers given the xacro include tree scructure
+    observer = Observer()
+    event_handler = XacroEventHandler(filepath)
+
+    observer.schedule(event_handler, path=filedir, recursive=True)
     observer.start()
 
     try:
@@ -67,6 +81,7 @@ if __name__ == '__main__':
             time.sleep(1)
     except KeyboardInterrupt:
         observer.stop()
+
     observer.join()
 
     observer.schedule()
