@@ -1,0 +1,37 @@
+<?xml version="1.0"?>
+<robot name="xacro_live_robot"
+  xmlns:xacro="http://ros.org/wiki/xacro">
+
+  <!-- Arguments -->
+  <xacro:arg name="base_width" default="0.5"/>
+  <xacro:arg name="base_length" default="0.8"/>
+  <xacro:arg name="base_height" default="0.2"/>
+
+  <xacro:arg name="wheel_radius" default="0.2"/>
+  <xacro:arg name="wheel_thickness" default="0.1"/>
+
+  <!-- Include macros -->
+  <xacro:include filename="wheel.xacro">
+
+  <!-- Base -->
+  <link name="base_link">
+    <visual>
+      <geometry>
+        <box size="$(arg base_length) $(arg base_width) $(arg base_height)"/>
+      </geometry>
+      <material name="white">
+        <color rgba="1 1 1 1"/>
+      </material>
+    </visual>
+  </link>
+
+  <!-- Wheels -->
+  <xacro:wheel name="left_wheel" parent="base_link" radius="$(arg wheel_radius)" thickness="$(arg wheel_thickness)">
+    <origin xyz="0 ${$(arg base_width)/2 + $(arg wheel_thickness)/2} 0" rpy="${-pi/2.} 0 0"/>
+  </xacro:wheel>
+  <xacro:wheel name="right_wheel" parent="base_link" radius="$(arg wheel_radius)" thickness="$(arg wheel_thickness)">
+    <origin xyz="0 ${-$(arg base_width)/2. - $(arg wheel_thickness)/2.} 0" rpy="${pi/2.} 0 0"/>
+  </xacro:wheel>
+
+
+</robot>
