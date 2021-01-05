@@ -15,6 +15,8 @@
 import os
 import time
 
+from rcl_interfaces.srv import SetParameters
+from rcl_interfaces.msg import Parameter, ParameterValue, ParameterType
 import rclpy
 import rclpy.utilities as rosutil
 from std_msgs.msg import String
@@ -24,44 +26,18 @@ from watchdog.observers import Observer
 import xacro
 
 
-class XacroTree:
-
-    def __init__(self, root_file):
-        self.root_file = os.path.realpath(root_file)
-        self.dirs = set(os.path.dirname(self.root_file))
-        self.files = set(self.root_file)
-        self.doc = None
-
-    def update(self) -> None:
-        self.doc = xacro.process_file(
-            self.root_file, **{
-                'output': None,
-                'just_deps': False,
-                'xacro_ns': True,
-                'verbosity': 1,
-                'mappings': {}
-            }
-        )
-        self.files.update(xacro.all_includes)
-
-
 class XacroEventHandler(FileSystemEventHandler):
 
-    def __init__(self, xacro_observer, publisher):
+    def __init__(self, xacro_observer):
         self.xacro_observer = xacro_observer
-        self.publisher = publisher
 
     def on_modified(self, event):
         if event.event_type == EVENT_TYPE_MODIFIED and not event.is_directory:
             print(f'event type: {event.event_type}  path : {event.src_path}')  # TODO: remove
 
             if self.xacro_observer.is_file_member(event.src_path):
-                print(
-                    'process!'
-                )  # TODO: replace by calling service to update the robot description
+                print('process!')
                 self.xacro_observer.update()
-                self.publisher.publish(String(data=self.xacro_observer.xml_string()))
-                print(self.xacro_observer.xml_string())
 
 
 class XacroObserver:
@@ -72,8 +48,20 @@ class XacroObserver:
         self.files = {self.root_file}
         self.doc = None
         self.observer = Observer()
-        self.publisher = node.create_publisher(String, 'topic', 10)
-        self.event_handler = XacroEventHandler(self, self.publisher)
+        self.client = node.create_client(SetParameters, 'robot_state_publisher/set_parameters')
+
+        ready = self.client.wait_for_service(timeout_sec=5.0)
+
+        if not ready:
+            raise RuntimeError('Wait for service timed out')
+
+        self.request = SetParameters.Request()
+        parameter = Parameter()
+        parameter.name = 'robot_description'
+        parameter.value.type = ParameterType.PARAMETER_STRING
+        self.request.parameters = [parameter]
+
+        self.event_handler = XacroEventHandler(self)
 
     def xml_string(self):
         return self.doc.toprettyxml(indent='  ')
@@ -113,6 +101,9 @@ class XacroObserver:
             new_dirs = [xdir for xdir in self.dirs if xdir not in watched_dirs]
             for new_dir in new_dirs:
                 self.observer.schedule(self.event_handler, path=new_dir, recursive=False)
+
+            self.request.parameters[0].value.string_value = self.xml_string()
+            self.client.call_async(self.request)
         except Exception as ex:
             print('Exception2')
             print(ex)
@@ -121,26 +112,15 @@ class XacroObserver:
 if __name__ == '__main__':
 
     rclpy.init()
+    node = rclpy.create_node('xacro_live')
+
     args = rosutil.remove_ros_args()
 
     # TODO: improve argparsing (add msgs, consider multiple files and folders)
     assert (len(args) == 2 and os.path.isfile(args[1]))
 
-    filepath = os.path.abspath(args[1])
-    filedir = os.path.dirname(filepath)
-
-    node = rclpy.create_node('node')
     observer = XacroObserver(args[1], node)
-
     observer.start()
-
-    # TODO: consider multiple observers given the xacro include tree scructure
-    # observer = Observer()
-    # event_handler = XacroEventHandler(filepath)
-
-    # observer.schedule(event_handler, path=filedir, recursive=True)
-    # observer._watches
-    # observer.start()
 
     try:
         while True:
