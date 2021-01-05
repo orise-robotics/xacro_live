@@ -19,6 +19,7 @@ from rcl_interfaces.msg import Parameter
 from rcl_interfaces.msg import ParameterType
 from rcl_interfaces.srv import SetParameters
 import rclpy
+import rclpy.logging as roslog
 import rclpy.utilities as rosutil
 from watchdog.events import EVENT_TYPE_MODIFIED
 from watchdog.events import FileSystemEventHandler
@@ -30,11 +31,12 @@ class XacroEventHandler(FileSystemEventHandler):
 
     def __init__(self, xacro_observer):
         self.xacro_observer = xacro_observer
+        self.logger = roslog.get_logger('XacroEventHandler')
 
     def on_modified(self, event):
         if event.event_type == EVENT_TYPE_MODIFIED and not event.is_directory:
             if self.xacro_observer.is_file_member(event.src_path):
-                print("File '{}' modified!".format(event.src_path))
+                self.logger.info("File '{}' modified!".format(event.src_path))
                 self.xacro_observer.update()
 
 
@@ -47,6 +49,8 @@ class XacroObserver:
         self.doc = None
         self.observer = Observer()
         self.client = node.create_client(SetParameters, 'robot_state_publisher/set_parameters')
+
+        self.logger = roslog.get_logger('XacroObserver')
 
         ready = self.client.wait_for_service(timeout_sec=5.0)
 
@@ -103,8 +107,8 @@ class XacroObserver:
             self.request.parameters[0].value.string_value = self.xml_string()
             self.client.call_async(self.request)
         except Exception as ex:
-            print('Invalid update!')
-            print(ex)
+            self.logger.warn('Invalid update!')
+            self.logger.warn(str(ex))
 
 
 if __name__ == '__main__':
@@ -114,7 +118,7 @@ if __name__ == '__main__':
 
     args = rosutil.remove_ros_args()
 
-    # TODO: improve argparsing (add msgs, consider multiple files and folders)
+    # TODO: improve argparsing
     assert (len(args) == 2 and os.path.isfile(args[1]))
 
     observer = XacroObserver(args[1], node)
