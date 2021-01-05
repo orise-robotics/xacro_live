@@ -15,11 +15,11 @@
 import os
 import time
 
+from rcl_interfaces.msg import Parameter
+from rcl_interfaces.msg import ParameterType
 from rcl_interfaces.srv import SetParameters
-from rcl_interfaces.msg import Parameter, ParameterValue, ParameterType
 import rclpy
 import rclpy.utilities as rosutil
-from std_msgs.msg import String
 from watchdog.events import EVENT_TYPE_MODIFIED
 from watchdog.events import FileSystemEventHandler
 from watchdog.observers import Observer
@@ -33,10 +33,8 @@ class XacroEventHandler(FileSystemEventHandler):
 
     def on_modified(self, event):
         if event.event_type == EVENT_TYPE_MODIFIED and not event.is_directory:
-            print(f'event type: {event.event_type}  path : {event.src_path}')  # TODO: remove
-
             if self.xacro_observer.is_file_member(event.src_path):
-                print('process!')
+                print("File '{}' modified!".format(event.src_path))
                 self.xacro_observer.update()
 
 
@@ -105,7 +103,7 @@ class XacroObserver:
             self.request.parameters[0].value.string_value = self.xml_string()
             self.client.call_async(self.request)
         except Exception as ex:
-            print('Exception2')
+            print('Invalid update!')
             print(ex)
 
 
