@@ -17,45 +17,105 @@ import time
 
 import rclpy
 import rclpy.utilities as rosutil
+from std_msgs.msg import String
 from watchdog.events import EVENT_TYPE_MODIFIED
 from watchdog.events import FileSystemEventHandler
 from watchdog.observers import Observer
 import xacro
 
 
-class XacroEventHandler(FileSystemEventHandler):
+class XacroTree:
 
     def __init__(self, root_file):
-        super().__init__()
-        self.root_file = root_file
-        try:
-            self.doc, self.all_files = self.__process_file()
-        except Exception as ex:  # TODO: specify exceptions to be handled
-            print('Invalid xacro file!')
-            print(ex)
+        self.root_file = os.path.realpath(root_file)
+        self.dirs = set(os.path.dirname(self.root_file))
+        self.files = set(self.root_file)
+        self.doc = None
+
+    def update(self) -> None:
+        self.doc = xacro.process_file(
+            self.root_file, **{
+                'output': None,
+                'just_deps': False,
+                'xacro_ns': True,
+                'verbosity': 1,
+                'mappings': {}
+            }
+        )
+        self.files.update(xacro.all_includes)
+
+
+class XacroEventHandler(FileSystemEventHandler):
+
+    def __init__(self, xacro_observer, publisher):
+        self.xacro_observer = xacro_observer
+        self.publisher = publisher
 
     def on_modified(self, event):
         if event.event_type == EVENT_TYPE_MODIFIED and not event.is_directory:
             print(f'event type: {event.event_type}  path : {event.src_path}')  # TODO: remove
 
-            if any(True for file in self.all_files if event.src_path.endswith(file)):
-                try:
-                    self.doc, self.all_files = self.__process_file()
-                except Exception as ex:
-                    print(ex)
+            if self.xacro_observer.is_file_member(event.src_path):
+                print(
+                    'process!'
+                )  # TODO: replace by calling service to update the robot description
+                self.xacro_observer.update()
+                self.publisher.publish(String(data=self.xacro_observer.xml_string()))
+                print(self.xacro_observer.xml_string())
 
-            print('process!')  # TODO: replace by calling service to update the robot description
 
-    def __process_file(self):
-        opts = {
-            'output': None,
-            'just_deps': False,
-            'xacro_ns': True,
-            'verbosity': 1,
-            'mappings': {}
-        }
-        doc = xacro.process_file(self.root_file, **opts)
-        return doc, xacro.all_includes + [self.root_file]
+class XacroObserver:
+
+    def __init__(self, root_file, node):
+        self.root_file = os.path.realpath(root_file)
+        self.dirs = {os.path.dirname(self.root_file)}
+        self.files = {self.root_file}
+        self.doc = None
+        self.observer = Observer()
+        self.publisher = node.create_publisher(String, 'topic', 10)
+        self.event_handler = XacroEventHandler(self, self.publisher)
+
+    def xml_string(self):
+        return self.doc.toprettyxml(indent='  ')
+
+    def watched_dirs(self):
+        return [emitter.watch.path for emitter in self.observer.emitters]
+
+    def start(self):
+        self.observer.start()
+        self.update()
+
+    def stop(self):
+        self.observer.stop()
+        self.observer.join()
+
+    def is_file_member(self, path):
+        return os.path.realpath(path) in self.files
+
+    def update(self) -> None:
+        try:
+            # process xacro file
+            self.doc = xacro.process_file(
+                self.root_file, **{
+                    'output': None,
+                    'just_deps': False,
+                    'xacro_ns': True,
+                    'verbosity': 1,
+                    'mappings': {}
+                }
+            )
+            # compute include files and dirs
+            self.files.update([os.path.realpath(file) for file in xacro.all_includes])
+            self.dirs.update([os.path.dirname(file) for file in self.files])
+
+            # watch all include files
+            watched_dirs = self.watched_dirs()
+            new_dirs = [xdir for xdir in self.dirs if xdir not in watched_dirs]
+            for new_dir in new_dirs:
+                self.observer.schedule(self.event_handler, path=new_dir, recursive=False)
+        except Exception as ex:
+            print('Exception2')
+            print(ex)
 
 
 if __name__ == '__main__':
@@ -69,19 +129,22 @@ if __name__ == '__main__':
     filepath = os.path.abspath(args[1])
     filedir = os.path.dirname(filepath)
 
-    # TODO: consider multiple observers given the xacro include tree scructure
-    observer = Observer()
-    event_handler = XacroEventHandler(filepath)
+    node = rclpy.create_node('node')
+    observer = XacroObserver(args[1], node)
 
-    observer.schedule(event_handler, path=filedir, recursive=True)
     observer.start()
+
+    # TODO: consider multiple observers given the xacro include tree scructure
+    # observer = Observer()
+    # event_handler = XacroEventHandler(filepath)
+
+    # observer.schedule(event_handler, path=filedir, recursive=True)
+    # observer._watches
+    # observer.start()
 
     try:
         while True:
             time.sleep(1)
-    except KeyboardInterrupt:
+    finally:
         observer.stop()
-
-    observer.join()
-
-    observer.schedule()
+        observer.join()
