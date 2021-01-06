@@ -52,6 +52,7 @@ class XacroObserver:
 
         self.logger = roslog.get_logger('XacroObserver')
 
+        # TODO: uncouple
         ready = self.client.wait_for_service(timeout_sec=5.0)
 
         if not ready:
@@ -66,46 +67,63 @@ class XacroObserver:
         self.event_handler = XacroEventHandler(self)
 
     def xml_string(self):
+        """Get current urdf string output of the current version of the target file."""
         return self.doc.toprettyxml(indent='  ')
 
     def watched_dirs(self):
+        """Get the list of directories being watched."""
         return [emitter.watch.path for emitter in self.observer.emitters]
 
     def start(self):
+        """Start tracking."""
         self.observer.start()
         self.update()
 
     def stop(self):
+        """Stop tracking."""
         self.observer.stop()
         self.observer.join()
 
     def is_file_member(self, path):
+        """Check if path is a member of the target xacro file tree."""
         return os.path.realpath(path) in self.files
+
+    def process_file(self):
+        """Process the xacro file."""
+        self.doc = xacro.process_file(
+            self.root_file, **{
+                'output': None,
+                'just_deps': False,
+                'xacro_ns': True,
+                'verbosity': 1,
+                'mappings': {}
+            }
+        )
+        return self.doc
+
+    def update_file_dir_lists(self):
+        """Compute include files and their directories."""
+        self.files.update([os.path.realpath(file) for file in xacro.all_includes])
+        self.dirs.update([os.path.dirname(file) for file in self.files])
+
+    def update_watchlist(self):
+        """Update list of directories tracked."""
+        watched_dirs = self.watched_dirs()
+        new_dirs = [xdir for xdir in self.dirs if xdir not in watched_dirs]
+        for new_dir in new_dirs:
+            self.observer.schedule(self.event_handler, path=new_dir, recursive=False)
+
+    def update_robot_description(self):
+        """Update the robot_description parameter with the new xacro output."""
+        self.request.parameters[0].value.string_value = self.xml_string()
+        self.client.call_async(self.request)
 
     def update(self) -> None:
         try:
-            # process xacro file
-            self.doc = xacro.process_file(
-                self.root_file, **{
-                    'output': None,
-                    'just_deps': False,
-                    'xacro_ns': True,
-                    'verbosity': 1,
-                    'mappings': {}
-                }
-            )
-            # compute include files and dirs
-            self.files.update([os.path.realpath(file) for file in xacro.all_includes])
-            self.dirs.update([os.path.dirname(file) for file in self.files])
-
-            # watch all include files
-            watched_dirs = self.watched_dirs()
-            new_dirs = [xdir for xdir in self.dirs if xdir not in watched_dirs]
-            for new_dir in new_dirs:
-                self.observer.schedule(self.event_handler, path=new_dir, recursive=False)
-
-            self.request.parameters[0].value.string_value = self.xml_string()
-            self.client.call_async(self.request)
+            self.process_file()
+            self.update_file_dir_lists()
+            self.update_watchlist()
+            self.update_robot_description()
         except Exception as ex:
             self.logger.warn('Invalid update!')
             self.logger.warn(str(ex))
@@ -129,4 +147,3 @@ if __name__ == '__main__':
             time.sleep(1)
     finally:
         observer.stop()
-        observer.join()
