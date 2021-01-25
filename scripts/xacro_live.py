@@ -13,13 +13,14 @@
 # limitations under the License.
 
 import os
-import time
+import typing
 
 from rcl_interfaces.msg import Parameter
 from rcl_interfaces.msg import ParameterType
 from rcl_interfaces.srv import SetParameters
 import rclpy
 import rclpy.logging as roslog
+import rclpy.node
 import rclpy.utilities as rosutil
 from watchdog.events import EVENT_TYPE_MODIFIED
 from watchdog.events import FileSystemEventHandler
@@ -27,68 +28,54 @@ from watchdog.observers import Observer
 import xacro
 
 
-class XacroEventHandler(FileSystemEventHandler):
+class RobotDescriptionClient:
 
-    def __init__(self, xacro_observer):
-        self.xacro_observer = xacro_observer
-        self.logger = roslog.get_logger('XacroEventHandler')
+    def __init__(
+        self,
+        client_node: rclpy.node.Node,
+        server_node_name='robot_state_publisher',
+        param_name='robot_description'
+    ):
+        self.request = SetParameters.Request()
 
-    def on_modified(self, event):
-        if event.event_type == EVENT_TYPE_MODIFIED and not event.is_directory:
-            if self.xacro_observer.is_file_member(event.src_path):
-                self.logger.info("File '{}' modified!".format(event.src_path))
-                self.xacro_observer.update()
+        parameter = Parameter()
+        parameter.name = param_name
+        parameter.value.type = ParameterType.PARAMETER_STRING
+
+        self.request.parameters = [parameter]
+        self.client = node.create_client(SetParameters, server_node_name + '/set_parameters')
+
+    def wait_for_service(self, timeout_sec=5.) -> None:
+        if not self.client.wait_for_service(timeout_sec):
+            raise RuntimeError('Wait for service timed out')
+
+    def call_async(self, robot_description_str) -> None:
+        self.request.parameters[0].value.string_value = robot_description_str
+        self.client.call_async(self.request)
 
 
-class XacroObserver:
+class XacroTree:
 
-    def __init__(self, root_file, node):
+    def __init__(self, root_file):
         self.root_file = os.path.realpath(root_file)
         self.dirs = {os.path.dirname(self.root_file)}
         self.files = {self.root_file}
         self.doc = None
-        self.observer = Observer()
-        self.client = node.create_client(SetParameters, 'robot_state_publisher/set_parameters')
-
-        self.logger = roslog.get_logger('XacroObserver')
-
-        # TODO: uncouple
-        ready = self.client.wait_for_service(timeout_sec=5.0)
-
-        if not ready:
-            raise RuntimeError('Wait for service timed out')
-
-        self.request = SetParameters.Request()
-        parameter = Parameter()
-        parameter.name = 'robot_description'
-        parameter.value.type = ParameterType.PARAMETER_STRING
-        self.request.parameters = [parameter]
-
-        self.event_handler = XacroEventHandler(self)
 
     def xml_string(self):
         """Get current urdf string output of the current version of the target file."""
         return self.doc.toprettyxml(indent='  ')
 
-    def watched_dirs(self):
-        """Get the list of directories being watched."""
-        return [emitter.watch.path for emitter in self.observer.emitters]
-
-    def start(self):
-        """Start tracking."""
-        self.observer.start()
-        self.update()
-
-    def stop(self):
-        """Stop tracking."""
-        self.observer.stop()
-        self.observer.join()
-
     def is_file_member(self, path):
         """Check if path is a member of the target xacro file tree."""
         return os.path.realpath(path) in self.files
 
-    def process_file(self):
+    def update(self):
+        """Process the xacro file and update files & directories."""
+        self._process_file()
+        self._update_file_dir_lists()
+
+    def _process_file(self):
         """Process the xacro file."""
         self.doc = xacro.process_file(
             self.root_file, **{
@@ -101,32 +88,63 @@ class XacroObserver:
         )
         return self.doc
 
-    def update_file_dir_lists(self):
+    def _update_file_dir_lists(self):
         """Compute include files and their directories."""
         self.files.update([os.path.realpath(file) for file in xacro.all_includes])
         self.dirs.update([os.path.dirname(file) for file in self.files])
 
-    def update_watchlist(self):
+
+class XacroObserver:
+
+    def __init__(self, root_file):
+        self.xacro_tree = XacroTree(root_file)
+        self.observer = Observer()
+        self.logger = roslog.get_logger('XacroObserver')
+
+    def watched_dirs(self):
+        """Get the list of directories being watched."""
+        return [emitter.watch.path for emitter in self.observer.emitters]
+
+    def start(self, event_handler):
+        """Start tracking."""
+        self.observer.start()
+        self.update(event_handler)
+
+    def stop(self):
+        """Stop tracking."""
+        self.observer.stop()
+        self.observer.join()
+
+    def update_watchlist(self, event_handler):
         """Update list of directories tracked."""
         watched_dirs = self.watched_dirs()
-        new_dirs = [xdir for xdir in self.dirs if xdir not in watched_dirs]
+        new_dirs = [xdir for xdir in self.xacro_tree.dirs if xdir not in watched_dirs]
         for new_dir in new_dirs:
-            self.observer.schedule(self.event_handler, path=new_dir, recursive=False)
+            self.observer.schedule(event_handler, path=new_dir, recursive=False)
 
-    def update_robot_description(self):
-        """Update the robot_description parameter with the new xacro output."""
-        self.request.parameters[0].value.string_value = self.xml_string()
-        self.client.call_async(self.request)
-
-    def update(self) -> None:
+    def update(self, event_handler) -> None:
         try:
-            self.process_file()
-            self.update_file_dir_lists()
-            self.update_watchlist()
-            self.update_robot_description()
+            self.xacro_tree.update()
+            self.update_watchlist(event_handler)
         except Exception as ex:
             self.logger.warn('Invalid update!')
             self.logger.warn(str(ex))
+
+
+class XacroEventHandler(FileSystemEventHandler):
+
+    def __init__(self, xacro_observer, clients: typing.List[RobotDescriptionClient]):
+        self.xacro_observer = xacro_observer
+        self.logger = roslog.get_logger('XacroEventHandler')
+        self.clients = clients
+
+    def on_modified(self, event):
+        if event.event_type == EVENT_TYPE_MODIFIED and not event.is_directory:
+            if self.xacro_observer.xacro_tree.is_file_member(event.src_path):
+                self.logger.info("File '{}' modified!".format(event.src_path))
+                self.xacro_observer.update(self)
+                for client in self.clients:
+                    client.call_async(self.xacro_observer.xacro_tree.xml_string())
 
 
 if __name__ == '__main__':
@@ -139,11 +157,15 @@ if __name__ == '__main__':
     # TODO: improve argparsing
     assert (len(args) == 2 and os.path.isfile(args[1]))
 
-    observer = XacroObserver(args[1], node)
-    observer.start()
+    observer = XacroObserver(args[1])
+    clients = [
+        RobotDescriptionClient(node, 'robot_state_publisher'),
+        RobotDescriptionClient(node, 'joint_state_publisher')
+    ]
+    event_handler = XacroEventHandler(observer, clients)
+    observer.start(event_handler)
 
     try:
-        while True:
-            time.sleep(1)
+        rclpy.spin(node)
     finally:
         observer.stop()
