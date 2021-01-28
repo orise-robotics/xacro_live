@@ -18,9 +18,9 @@ import rclpy
 import rclpy.node
 import rclpy.utilities as rosutil
 
-from xacro_live import RobotDescriptionClient
-from xacro_live import XacroObserver
-from xacro_live import XacroUpdateHandler
+from .xacro_observer import XacroObserver
+from .xacro_update_handler import RobotDescriptionClient
+from .xacro_update_handler import XacroUpdateHandler
 
 
 def main():
