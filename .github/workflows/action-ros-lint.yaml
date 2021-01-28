@@ -4,18 +4,17 @@ on: [pull_request]
 
 jobs:
   ament_lint:
-    name: ament_lint
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-latest
+    container:
+      image: ubuntu:bionic
     strategy:
       fail-fast: false
       matrix:
           linter: [xmllint, flake8, copyright, pep257]
     steps:
       - uses: actions/checkout@v2
-      - uses: ros-tooling/setup-ros@0.0.25
+      - uses: ros-tooling/setup-ros@master
       - uses: ros-tooling/action-ros-lint@master
         with:
-          distribution: foxy
           linter: ${{ matrix.linter }}
-          package-name:
-            xacro_live
+          package-name: xacro_live
