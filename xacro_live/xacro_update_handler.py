@@ -12,8 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import typing
-
 import rclpy.logging as roslog
 from watchdog.events import EVENT_TYPE_MODIFIED
 from watchdog.events import FileSystemEventHandler
