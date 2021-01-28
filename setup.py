@@ -35,6 +35,7 @@ setup(
     ],
     description='Update the robot_description dinamically from updates on a target xacro file.',
     license='Apache License 2.0',
+    tests_require=['pytest'],
     entry_points={
         'console_scripts': [
             'xacro_live = xacro_live.xacro_live_node:main'
