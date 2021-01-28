@@ -1,4 +1,4 @@
-# from glob import glob
+from glob import glob
 import os
 
 from setuptools import setup
@@ -16,8 +16,9 @@ setup(
         ('share/ament_index/resource_index/packages', ['resource/' + package_name]),
         # Include our package.xml file
         (os.path.join('share', package_name), ['package.xml']),
-        # # Include all launch files.
-        # (os.path.join('share', package_name, 'launch'), glob('*.launch.py'))
+        # Include all launch & config files.
+        (os.path.join('share', package_name, 'launch'), glob('launch/*.launch.py')),
+        (os.path.join('share', package_name, 'rviz'), glob('rviz/*.rviz'))
     ],
     # This is important as well
     install_requires=['setuptools'],
@@ -37,8 +38,6 @@ setup(
     license='Apache License 2.0',
     tests_require=['pytest'],
     entry_points={
-        'console_scripts': [
-            'xacro_live = xacro_live.xacro_live_node:main'
-        ],
+        'console_scripts': ['xacro_live = xacro_live.xacro_live_node:main'],
     },
 )
