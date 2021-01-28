@@ -51,9 +51,5 @@ class XacroObserver:
 
     def update(self, event_handler: FileSystemEventHandler) -> None:
         """Update xacro_tree and dir watchlist."""
-        try:
-            self.xacro_tree.update()
-            self.update_watchlist(event_handler)
-        except Exception as ex:
-            self.logger.warn('Invalid update!')
-            self.logger.warn(str(ex))
+        self.xacro_tree.update()
+        self.update_watchlist(event_handler)

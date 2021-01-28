@@ -24,21 +24,19 @@ from .xacro_observer import XacroObserver
 
 class XacroUpdateHandler(FileSystemEventHandler):
 
-    def __init__(
-        self, xacro_observer: XacroObserver, clients: typing.List[RobotDescriptionClient]
-    ):
+    def __init__(self, xacro_observer: XacroObserver, client: RobotDescriptionClient):
         self.xacro_observer = xacro_observer
         self.logger = roslog.get_logger('xacro_live')
-        self.clients = clients
+        self.client = client
 
     def on_modified(self, event):
+        """Look for updates on xacro model and publish the them to the clients."""
         if event.event_type == EVENT_TYPE_MODIFIED and not event.is_directory:
             if self.xacro_observer.xacro_tree.is_file_member(event.src_path):
                 self.logger.info("File '{}' modified!".format(event.src_path))
                 try:
                     self.xacro_observer.update(self)
-                    for client in self.clients:
-                        client.call_async(self.xacro_observer.xacro_tree.xml_string())
+                    self.client.call_async(self.xacro_observer.xacro_tree.xml_string())
                 except Exception as ex:  # TODO: specify exception
                     self.logger.warn('Invalid update!')
                     self.logger.warn(str(ex))

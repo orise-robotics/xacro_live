@@ -34,11 +34,8 @@ def main():
     assert (len(args) == 2 and os.path.isfile(args[1]))
 
     observer = XacroObserver(args[1])
-    clients = [
-        RobotDescriptionClient(node, 'robot_state_publisher'),
-        RobotDescriptionClient(node, 'joint_state_publisher')
-    ]
-    event_handler = XacroUpdateHandler(observer, clients)
+    client = RobotDescriptionClient(node, 'robot_state_publisher')
+    event_handler = XacroUpdateHandler(observer, client)
     observer.start(event_handler)
 
     try:
