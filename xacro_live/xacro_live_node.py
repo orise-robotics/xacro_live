@@ -15,8 +15,10 @@
 import os
 
 import rclpy
+import rclpy.logging
 import rclpy.node
 import rclpy.utilities as rosutil
+import xacro
 
 from .xacro_observer import XacroObserver
 from .xacro_update_handler import RobotDescriptionClient
@@ -36,9 +38,17 @@ def main():
     observer = XacroObserver(args[1])
     client = RobotDescriptionClient(node, 'robot_state_publisher')
     event_handler = XacroUpdateHandler(observer, client)
-    observer.start(event_handler)
+
+    try:
+        observer.start(event_handler)
+    except xacro.XacroException as ex:
+        rclpy.logging.get_logger('xacro_live').error('Invalid startup robot_description!')
+        rclpy.logging.get_logger('xacro_live').error(str(ex))
 
     try:
         rclpy.spin(node)
+    except KeyboardInterrupt:
+        rclpy.logging.get_logger('xacro_live').info('Exited by KeyboardInterrupt')
     finally:
+        rclpy.logging.get_logger('xacro_live').info('Stop xacro observer!')
         observer.stop()
