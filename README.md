@@ -12,7 +12,7 @@ ros2 run xacro_live xacro_live path/to/target.xacro
 
 Then, whenever you modify any of the files of the urdf tree, a request to change the `robot_description` param is sent to `robot_state_publisher` node.
 
-__IMPORTANT NOTE:__To track the files in the source folder, you must run `colcon build` with the `--symlink-install` flag, otherwise it will track the files installed.
+__IMPORTANT NOTE:__ To track the files in the source folder, you must run `colcon build` with the `--symlink-install` flag, otherwise it will track the files installed.
 
 The package also provides the helper launch file `xacro_live_view.launch`:
 
