@@ -15,6 +15,7 @@
 import rclpy.logging as roslog
 from watchdog.events import EVENT_TYPE_MODIFIED
 from watchdog.events import FileSystemEventHandler
+import xacro
 
 from .robot_description_client import RobotDescriptionClient
 from .xacro_observer import XacroObserver
@@ -35,6 +36,6 @@ class XacroUpdateHandler(FileSystemEventHandler):
                 try:
                     self.xacro_observer.update(self)
                     self.client.call_async(self.xacro_observer.xacro_tree.xml_string())
-                except Exception as ex:  # TODO: specify exception
+                except xacro.XacroException as ex:
                     self.logger.warn('Invalid update!')
                     self.logger.warn(str(ex))
