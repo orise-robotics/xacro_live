@@ -18,6 +18,7 @@ jobs:
       image: ${{ matrix.docker_image }}
     steps:
       - uses: actions/checkout@v2
+      - run: sudo apt-get update
       - uses: ros-tooling/action-ros-ci@0.1.1
         with:
           package-name: xacro_live
