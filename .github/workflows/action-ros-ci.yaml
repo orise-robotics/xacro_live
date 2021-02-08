@@ -17,6 +17,8 @@ jobs:
       image: ${{ matrix.docker_image }}
     steps:
       - uses: actions/checkout@v2
+        with:
+          path: src
       # - uses: ros-tooling/setup-ros@0.1.2
       #   with:
       #     required-ros-distributions: ${{ matrix.ros_distribution }}
