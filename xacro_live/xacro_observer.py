@@ -28,6 +28,7 @@ class XacroObserver:
         self.observer = Observer()
         self.logger = roslog.get_logger('xacro_live')
 
+    @property
     def watched_dirs(self) -> typing.List[str]:
         """Get the list of directories being watched."""
         return [emitter.watch.path for emitter in self.observer.emitters]
@@ -44,8 +45,7 @@ class XacroObserver:
 
     def update_watchlist(self, event_handler: FileSystemEventHandler) -> None:
         """Update list of directories tracked."""
-        watched_dirs = self.watched_dirs()
-        new_dirs = [xdir for xdir in self.xacro_tree.dirs if xdir not in watched_dirs]
+        new_dirs = [xdir for xdir in self.xacro_tree.dirs if xdir not in self.watched_dirs]
         for new_dir in new_dirs:
             self.observer.schedule(event_handler, path=new_dir, recursive=False)
 
