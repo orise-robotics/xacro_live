@@ -9,19 +9,16 @@ jobs:
     strategy:
       matrix:
         include:
-          - docker_image: osrf/ros2:devel
+          - docker_image: ubuntu:focal
             ros_distribution: foxy
-          - docker_image: osrf/ros2:devel-bionic
+          - docker_image: ubuntu:bionic
             ros_distribution: dashing
     container:
       image: ${{ matrix.docker_image }}
     steps:
-      - uses: actions/checkout@v2
+      - uses: ros-tooling/setup-ros@0.1.2
         with:
-          path: src
-      # - uses: ros-tooling/setup-ros@0.1.2
-      #   with:
-      #     required-ros-distributions: ${{ matrix.ros_distribution }}
+          required-ros-distributions: ${{ matrix.ros_distribution }}
       - uses: ros-tooling/action-ros-ci@0.1.1
         with:
           package-name: xacro_live
