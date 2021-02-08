@@ -10,17 +10,14 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - docker_image: ubuntu:focal
+          - docker_image: ros:foxy-ros-base
             ros_distribution: foxy
-          - docker_image: ubuntu:bionic
+          - docker_image: ros:dashing-ros-base
             ros_distribution: dashing
     container:
       image: ${{ matrix.docker_image }}
     steps:
       - uses: actions/checkout@v2
-      - uses: ros-tooling/setup-ros@0.1.2
-        with:
-          required-ros-distributions: ${{ matrix.ros_distribution }}
       - uses: ros-tooling/action-ros-ci@0.1.1
         with:
           package-name: xacro_live
