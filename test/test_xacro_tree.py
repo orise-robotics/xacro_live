@@ -13,12 +13,22 @@
 # limitations under the License.
 
 import os
-import xml.etree.ElementTree as ET
 
 import xacro
 from xacro_live import XacroTree
 
 xacro_file = 'test/urdf/robot.xacro'
+
+# compare xml_string output
+try:
+    import xml.etree.ElementTree
+    canonicalize = xml.etree.ElementTree.canonicalize
+except AttributeError:
+    import io, lxml.etree
+
+    def canonicalize(xml_string: str):
+        et = lxml.etree.parse(io.StringIO(xml_string))
+        return lxml.etree.tostring(et, method='c14n', with_comments=False)
 
 
 def test_init():
@@ -42,7 +52,17 @@ def test_update():
     tree.update()
 
     # compare xml_string output
-    assert ET.canonicalize(tree.xml_string()) == ET.canonicalize(xacro.process(xacro_file))
+    try:
+        import xml.etree.ElementTree
+        canonicalize = xml.etree.ElementTree.canonicalize
+    except AttributeError:
+        import lxml.etree
+
+        def canonicalize(xml_string: str):
+            et = lxml.etree.parse(io.StringIO(xml_string))
+            return lxml.etree.tostring(et, method='c14n', with_comments=False)
+
+    assert canonicalize(tree.xml_string()) == canonicalize(xacro.process(xacro_file))
 
     # check update of 'files' and 'dirs' attributes
     assert len(tree.files) == 2

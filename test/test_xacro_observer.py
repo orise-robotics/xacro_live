@@ -13,13 +13,23 @@
 # limitations under the License.
 
 from unittest.mock import MagicMock
-import xml.etree.ElementTree as ET
 
 import pytest
 from watchdog.events import FileSystemEventHandler
 import xacro
 from xacro_live import XacroObserver
 from xacro_live import XacroTree
+
+# compare xml_string output
+try:
+    import xml.etree.ElementTree
+    canonicalize = xml.etree.ElementTree.canonicalize
+except AttributeError:
+    import io, lxml.etree
+
+    def canonicalize(xml_string: str):
+        et = lxml.etree.parse(io.StringIO(xml_string))
+        return lxml.etree.tostring(et, method='c14n', with_comments=False)
 
 
 @pytest.fixture
@@ -59,8 +69,8 @@ def test_start_stop(xacro_observer, xacro_file, event_handler_mock):
 
     assert xacro_observer.observer.is_alive()
     assert len(xacro_observer.observer.emitters) == 2
-    assert ET.canonicalize(xacro_observer.xacro_tree.xml_string()
-                           ) == ET.canonicalize(xacro.process(xacro_file))
+    assert canonicalize(xacro_observer.xacro_tree.xml_string()
+                        ) == canonicalize(xacro.process(xacro_file))
 
     xacro_observer.stop()
 
