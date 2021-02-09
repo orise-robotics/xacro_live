@@ -12,6 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import io
 import os
 
 import xacro
@@ -24,7 +25,7 @@ try:
     import xml.etree.ElementTree
     canonicalize = xml.etree.ElementTree.canonicalize
 except AttributeError:
-    import io, lxml.etree
+    import lxml.etree
 
     def canonicalize(xml_string: str):
         et = lxml.etree.parse(io.StringIO(xml_string))
