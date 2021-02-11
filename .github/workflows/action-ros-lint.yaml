@@ -1,9 +1,9 @@
-name: Ament Lint
+name: ament-lint
 
 on: [pull_request]
 
 jobs:
-  ament_lint:
+  ament-lint:
     runs-on: ubuntu-latest
     container:
       image: ubuntu:focal

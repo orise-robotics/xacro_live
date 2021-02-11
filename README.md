@@ -1,5 +1,7 @@
 # xacro_live
 
+![build-test-badge](https://github.com/orise-robotics/xacro_live/workflows/build-test/badge.svg)
+
 Tool to update the robot_description dynamically from updates on a target xacro file.
 
 ## How it works
