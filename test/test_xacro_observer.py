@@ -30,14 +30,14 @@ def test_init(xacro_file, xacro_observer):
     assert xacro_observer.xacro_tree.files == expected_xacro_tree.files
 
 
-def test_start_stop(xacro_observer, xacro_file, event_handler_mock, canonicalize):
+def test_start_stop(xacro_observer, xacro_file, event_handler_mock, canonicalize_xml):
     event_handler_mock.on_modified.assert_not_called()
     xacro_observer.start(event_handler_mock)
 
     assert xacro_observer.observer.is_alive()
     assert len(xacro_observer.observer.emitters) == 2
-    assert canonicalize(xacro_observer.xacro_tree.xml_string()
-                        ) == canonicalize(xacro.process(xacro_file))
+    assert canonicalize_xml(xacro_observer.xacro_tree.xml_string()
+                            ) == canonicalize_xml(xacro.process(xacro_file))
 
     xacro_observer.stop()
 

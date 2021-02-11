@@ -37,7 +37,7 @@ def event_handler_mock():
 
 
 @pytest.fixture
-def canonicalize():
+def canonicalize_xml():
     try:
         import xml.etree.ElementTree
         canonicalize_fn = xml.etree.ElementTree.canonicalize
