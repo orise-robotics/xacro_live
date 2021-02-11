@@ -12,42 +12,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import io
-from unittest.mock import MagicMock
-
-import pytest
-from watchdog.events import FileSystemEventHandler
 import xacro
-from xacro_live import XacroObserver
 from xacro_live import XacroTree
-
-# compare xml_string output
-try:
-    import xml.etree.ElementTree
-    canonicalize = xml.etree.ElementTree.canonicalize
-except AttributeError:
-    import lxml.etree
-
-    def canonicalize(xml_string: str):
-        et = lxml.etree.parse(io.StringIO(xml_string))
-        return lxml.etree.tostring(et, method='c14n', with_comments=False)
-
-
-@pytest.fixture
-def xacro_file():
-    return 'test/urdf/robot.xacro'
-
-
-@pytest.fixture
-def xacro_observer(xacro_file):
-    return XacroObserver(xacro_file)
-
-
-@pytest.fixture
-def event_handler_mock():
-    event_handler = FileSystemEventHandler()
-    event_handler.on_modified = MagicMock()
-    return event_handler
 
 
 def test_init(xacro_file, xacro_observer):
@@ -64,7 +30,7 @@ def test_init(xacro_file, xacro_observer):
     assert xacro_observer.xacro_tree.files == expected_xacro_tree.files
 
 
-def test_start_stop(xacro_observer, xacro_file, event_handler_mock):
+def test_start_stop(xacro_observer, xacro_file, event_handler_mock, canonicalize):
     event_handler_mock.on_modified.assert_not_called()
     xacro_observer.start(event_handler_mock)
 
