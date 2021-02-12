@@ -15,11 +15,20 @@
 from unittest.mock import MagicMock
 
 import pytest
+import rclpy
+from rclpy.node import Node
 from watchdog.events import FileSystemEventHandler
 from xacro_live import XacroObserver
 
 
-@pytest.fixture
+class RobotDescriptionServer(Node):
+
+    def __init__(self):
+        super().__init__('robot_state_publisher')
+        self.declare_parameter('robot_description', str())
+
+
+@pytest.fixture(scope='module')
 def xacro_file():
     return 'test/urdf/robot.xacro'
 
@@ -36,7 +45,7 @@ def event_handler_mock():
     return event_handler
 
 
-@pytest.fixture
+@pytest.fixture(scope='module')
 def canonicalize_xml():
     try:
         import xml.etree.ElementTree
@@ -51,3 +60,17 @@ def canonicalize_xml():
             return lxml.etree.tostring(et, method='c14n', with_comments=False)
 
     return canonicalize_fn
+
+
+@pytest.fixture
+def test_node():
+    def test_node_fn(node_name: str):
+        rclpy.init()
+        return rclpy.create_node(node_name)
+    yield test_node_fn
+    rclpy.shutdown()
+
+
+@pytest.fixture
+def robot_description_server(test_node):
+    return RobotDescriptionServer(test_node('robot_state_publisher'))
