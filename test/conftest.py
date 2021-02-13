@@ -12,6 +12,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import os
+import shutil
 from unittest.mock import MagicMock
 
 import pytest
@@ -28,9 +30,15 @@ class RobotDescriptionServer(Node):
         self.declare_parameter('robot_description', str())
 
 
-@pytest.fixture(scope='module')
-def xacro_file():
-    return 'test/urdf/robot.xacro'
+@pytest.fixture
+def xacro_dir(tmp_path):
+    shutil.copytree('test/urdf', tmp_path, dirs_exist_ok=True)
+    return tmp_path
+
+
+@pytest.fixture
+def xacro_file(xacro_dir):
+    return os.path.join(xacro_dir, 'robot.xacro')
 
 
 @pytest.fixture
@@ -64,9 +72,11 @@ def canonicalize_xml():
 
 @pytest.fixture
 def test_node():
+
     def test_node_fn(node_name: str):
         rclpy.init()
         return rclpy.create_node(node_name)
+
     yield test_node_fn
     rclpy.shutdown()
 

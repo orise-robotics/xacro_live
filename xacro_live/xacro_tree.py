@@ -51,6 +51,7 @@ class XacroTree:
 
     def update(self) -> None:
         """Process the xacro file and update files & directories."""
+        xacro.all_includes = []
         self._doc = xacro.process_file(
             self.root_file, **{
                 'output': None,
@@ -60,5 +61,5 @@ class XacroTree:
                 'mappings': {}
             }
         )
-        self._files.update([os.path.realpath(file) for file in xacro.all_includes])
-        self._dirs.update([os.path.dirname(file) for file in self._files])
+        self._files = {os.path.realpath(file) for file in xacro.all_includes + [self.root_file]}
+        self._dirs = {os.path.dirname(file) for file in self._files}
