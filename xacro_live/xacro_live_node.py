@@ -41,7 +41,7 @@ def main():
 
     try:
         observer.start(event_handler)
-    except xacro.XacroException as ex:
+    except Exception as ex:
         rclpy.logging.get_logger('xacro_live').error('Invalid startup robot_description!')
         rclpy.logging.get_logger('xacro_live').error(str(ex))
 

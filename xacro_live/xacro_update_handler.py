@@ -36,6 +36,6 @@ class XacroUpdateHandler(FileSystemEventHandler):
                 try:
                     self.xacro_observer.update(self)
                     self.client.call_async(self.xacro_observer.xacro_tree.xml_string())
-                except xacro.XacroException as ex:
+                except Exception as ex:
                     self.logger.warn('Invalid update!')
                     self.logger.warn(str(ex))
