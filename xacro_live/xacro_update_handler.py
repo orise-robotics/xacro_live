@@ -15,7 +15,6 @@
 import rclpy.logging as roslog
 from watchdog.events import EVENT_TYPE_MODIFIED
 from watchdog.events import FileSystemEventHandler
-import xacro
 
 from .robot_description_client import RobotDescriptionClient
 from .xacro_observer import XacroObserver

@@ -18,7 +18,6 @@ import rclpy
 import rclpy.logging
 import rclpy.node
 import rclpy.utilities as rosutil
-import xacro
 
 from .xacro_observer import XacroObserver
 from .xacro_update_handler import RobotDescriptionClient
