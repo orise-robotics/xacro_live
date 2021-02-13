@@ -71,16 +71,11 @@ def canonicalize_xml():
 
 
 @pytest.fixture
-def test_node():
-
-    def test_node_fn(node_name: str):
-        rclpy.init()
-        return rclpy.create_node(node_name)
-
-    yield test_node_fn
+def init_node():
+    yield rclpy.init()
     rclpy.shutdown()
 
 
 @pytest.fixture
-def robot_description_server(test_node):
-    return RobotDescriptionServer(test_node('robot_state_publisher'))
+def robot_description_server(init_node):
+    return RobotDescriptionServer()
