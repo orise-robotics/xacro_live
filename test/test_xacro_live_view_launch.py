@@ -17,10 +17,12 @@ import unittest
 
 import launch
 from launch.actions import IncludeLaunchDescription
+from launch.actions import TimerAction
 from launch.launch_description_sources import PythonLaunchDescriptionSource
 from launch.substitutions import PathJoinSubstitution
 from launch_ros.substitutions import FindPackageShare
 import launch_testing
+from launch_testing.actions import ReadyToTest
 import launch_testing.asserts
 import pytest
 from rcl_interfaces.srv import GetParameters
@@ -46,7 +48,7 @@ def generate_test_description():
             # Start tests right away - no need to wait for anything in this example.
             # In a more complicated launch description, we might want this action happen
             # once some process starts or once some other event happens
-            launch_testing.actions.ReadyToTest(),
+            TimerAction(period=5.0, actions=[ReadyToTest()]),
         ]),
         {
             'spawn_launch': spawn_launch
