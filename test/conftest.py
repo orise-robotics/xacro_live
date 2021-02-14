@@ -14,6 +14,7 @@
 
 import os
 import shutil
+import time
 from unittest.mock import MagicMock
 
 import pytest
@@ -28,6 +29,32 @@ class RobotDescriptionServer(Node):
     def __init__(self):
         super().__init__('robot_state_publisher')
         self.declare_parameter('robot_description', str())
+
+
+class AsyncTimeout:
+
+    def __init__(self, duration: float, auto_start=True):
+        self.duration = duration
+        if auto_start:
+            self.start()
+
+    def start(self):
+        self.start_time = time.clock_gettime(time.CLOCK_MONOTONIC)
+
+    def running(self) -> bool:
+        return not self.finished()
+
+    def finished(self) -> bool:
+        return (time.clock_gettime(time.CLOCK_MONOTONIC) - self.start_time) >= self.duration
+
+
+@pytest.fixture(scope='session')
+def async_timeout():
+
+    def timeout_fn(duration, auto_start=True):
+        return AsyncTimeout(duration, auto_start)
+
+    return timeout_fn
 
 
 @pytest.fixture
@@ -53,7 +80,7 @@ def event_handler_mock():
     return event_handler
 
 
-@pytest.fixture(scope='module')
+@pytest.fixture(scope='session')
 def canonicalize_xml():
     try:
         import xml.etree.ElementTree

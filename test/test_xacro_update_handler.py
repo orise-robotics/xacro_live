@@ -16,6 +16,7 @@ import pathlib
 
 import pytest
 import rclpy
+import rclpy.executors
 import watchdog.events as wevt
 from xacro_live import RobotDescriptionClient
 from xacro_live import XacroUpdateHandler
@@ -70,11 +71,15 @@ def test_on_modify(
     assert expected == actual
 
 
-def test_on_modify_event_valid(handler, xacro_path, canonicalize_xml, robot_description_server):
+def test_on_modify_event_valid(
+    handler, xacro_path, canonicalize_xml, robot_description_server, async_timeout
+):
     xacro_path.touch()
 
-    while robot_description_server.get_parameter('robot_description').value == '':
-        rclpy.spin_once(robot_description_server)
+    timeout = async_timeout(1., auto_start=True)
+    while robot_description_server.get_parameter('robot_description'
+                                                 ).value == '' and timeout.running():
+        rclpy.spin_once(robot_description_server, timeout_sec=0.1)
 
     expected = canonicalize_xml(handler.xacro_observer.xacro_tree.xml_string())
     actual = canonicalize_xml(robot_description_server.get_parameter('robot_description').value)
