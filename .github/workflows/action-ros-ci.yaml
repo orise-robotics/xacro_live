@@ -15,6 +15,7 @@ jobs:
             ros_distribution: dashing
     container:
       image: ${{ matrix.docker_image }}
+      options: -v /tmp/.X11-unix:/tmp/.X11-unix:rw -e DISPLAY
     steps:
       # - uses: actions/checkout@v2
       - uses: ros-tooling/setup-ros@0.1.2
