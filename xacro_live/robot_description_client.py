@@ -16,6 +16,7 @@ import rcl_interfaces.msg
 import rcl_interfaces.srv
 import rclpy
 import rclpy.node
+from rclpy.task import Future
 
 
 class RobotDescriptionClient:
@@ -41,6 +42,6 @@ class RobotDescriptionClient:
         if not self.client.wait_for_service(timeout_sec):
             raise RuntimeError('Wait for service timed out')
 
-    def call_async(self, robot_description_str: str) -> None:
+    def call_async(self, robot_description_str: str) -> Future:
         self.request.parameters[0].value.string_value = robot_description_str
-        self.client.call_async(self.request)
+        return self.client.call_async(self.request)

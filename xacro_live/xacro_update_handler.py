@@ -13,6 +13,7 @@
 # limitations under the License.
 
 import rclpy.logging as roslog
+from rclpy.task import Future
 from watchdog.events import EVENT_TYPE_MODIFIED
 from watchdog.events import FileSystemEventHandler
 
@@ -26,6 +27,7 @@ class XacroUpdateHandler(FileSystemEventHandler):
         self.xacro_observer = xacro_observer
         self.logger = roslog.get_logger('xacro_live')
         self.client = client
+        self.future = Future()
 
     def on_modified(self, event):
         """Look for updates on xacro model and publish the them to the clients."""
@@ -34,7 +36,10 @@ class XacroUpdateHandler(FileSystemEventHandler):
                 self.logger.info("File '{}' modified!".format(event.src_path))
                 try:
                     self.xacro_observer.update(self)
-                    self.client.call_async(self.xacro_observer.xacro_tree.xml_string())
+                    self.future = self.client.call_async(
+                        self.xacro_observer.xacro_tree.xml_string()
+                    )
                 except Exception as ex:
+                    self.future = Future()
                     self.logger.warn('Invalid update!')
                     self.logger.warn(str(ex))
