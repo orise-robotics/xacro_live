@@ -12,8 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import os
-
 import rclpy
 import rclpy.logging
 import rclpy.node
@@ -32,7 +30,7 @@ def main():
     args = rosutil.remove_ros_args()
 
     # TODO: improve argparsing
-    assert (len(args) == 2 and os.path.isfile(args[1]))
+    # assert (len(args) == 2 and os.path.isfile(args[1]))
 
     observer = XacroObserver(args[1])
     client = RobotDescriptionClient(node, 'robot_state_publisher')
