@@ -39,7 +39,7 @@ class XacroUpdateHandler(FileSystemEventHandler):
                     self.future = self.client.call_async(
                         self.xacro_observer.xacro_tree.xml_string()
                     )
-                except Exception as ex:
+                except Exception as ex:  # noqa [flake8(B902)] TODO: specify exception types
                     self.future = Future()
                     self.logger.warn('Invalid update!')
                     self.logger.warn(str(ex))

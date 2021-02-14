@@ -40,7 +40,7 @@ def main():
 
     try:
         observer.start(event_handler)
-    except Exception as ex:
+    except Exception as ex:  # noqa [flake8(B902)] TODO: specify exception types
         rclpy.logging.get_logger('xacro_live').error('Invalid startup robot_description!')
         rclpy.logging.get_logger('xacro_live').error(str(ex))
 
