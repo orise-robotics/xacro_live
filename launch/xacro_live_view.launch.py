@@ -49,7 +49,10 @@ def generate_launch_description():
             executable='xacro_live',
             name='xacro_live',
             output='screen',
-            arguments=[LaunchConfiguration('xacro_file')]
+            parameters=[{
+                'xacro_file': LaunchConfiguration('xacro_file')
+            }]
+            # arguments=[LaunchConfiguration('xacro_file')]
         )
     )
     launch_description.add_action(

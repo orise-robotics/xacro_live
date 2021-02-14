@@ -15,7 +15,6 @@
 import rclpy
 import rclpy.logging
 import rclpy.node
-import rclpy.utilities as rosutil
 
 from .xacro_observer import XacroObserver
 from .xacro_update_handler import RobotDescriptionClient
@@ -27,12 +26,8 @@ def main():
     rclpy.init()
     node = rclpy.create_node('xacro_live')
 
-    args = rosutil.remove_ros_args()
-
-    # TODO: improve argparsing
-    # assert (len(args) == 2 and os.path.isfile(args[1]))
-
-    observer = XacroObserver(args[1])
+    node.declare_parameter('xacro_file')
+    observer = XacroObserver(node.get_parameter('xacro_file').get_parameter_value().string_value)
     client = RobotDescriptionClient(node, 'robot_state_publisher')
     event_handler = XacroUpdateHandler(observer, client)
 
