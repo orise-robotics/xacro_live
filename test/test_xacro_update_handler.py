@@ -16,6 +16,7 @@ import pathlib
 
 import pytest
 import rclpy
+import watchdog.events as wevt
 from xacro_live import RobotDescriptionClient
 from xacro_live import XacroUpdateHandler
 
@@ -43,7 +44,33 @@ def test_init(handler, xacro_observer, robot_description_client):
     assert handler.logger.name == 'xacro_live'
 
 
-def test_on_modify_valid(handler, xacro_path, canonicalize_xml, robot_description_server):
+def test_on_modify(
+    handler: XacroUpdateHandler, xacro_file, xacro_dir, robot_description_server, canonicalize_xml
+):
+    # Invalid types
+    handler.on_modified(wevt.FileCreatedEvent(xacro_file))
+    handler.on_modified(wevt.FileDeletedEvent(xacro_file))
+    handler.on_modified(wevt.FileMovedEvent(xacro_file, ''))
+    handler.on_modified(wevt.DirCreatedEvent(xacro_dir))
+    handler.on_modified(wevt.DirMovedEvent(xacro_dir, ''))
+    handler.on_modified(wevt.DirDeletedEvent(xacro_dir))
+    handler.on_modified(wevt.DirModifiedEvent(xacro_dir))
+
+    # Invalid file
+    handler.on_modified(wevt.FileModifiedEvent(''))
+    rclpy.spin_once(robot_description_server, timeout_sec=1)
+    assert robot_description_server.get_parameter('robot_description').value == ''
+
+    # Valid file
+    handler.on_modified(wevt.FileModifiedEvent(xacro_file))
+    rclpy.spin_once(robot_description_server, timeout_sec=1)
+    expected = canonicalize_xml(handler.xacro_observer.xacro_tree.xml_string())
+    actual = canonicalize_xml(robot_description_server.get_parameter('robot_description').value)
+
+    assert expected == actual
+
+
+def test_on_modify_event_valid(handler, xacro_path, canonicalize_xml, robot_description_server):
     xacro_path.touch()
 
     while robot_description_server.get_parameter('robot_description').value == '':
@@ -55,7 +82,7 @@ def test_on_modify_valid(handler, xacro_path, canonicalize_xml, robot_descriptio
     assert expected == actual
 
 
-def test_on_modify_invalid(handler, xacro_path, robot_description_server):
+def test_on_modify_event_invalid(handler, xacro_path, robot_description_server):
     xacro_path.write_text('/')
 
     rclpy.spin_once(robot_description_server, timeout_sec=1)
