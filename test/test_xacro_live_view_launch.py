@@ -23,6 +23,7 @@ from launch_ros.substitutions import FindPackageShare
 import launch_testing
 import launch_testing.asserts
 import pytest
+from rcl_interfaces.srv import GetParameters
 import rclpy
 import rclpy.node
 
@@ -94,6 +95,14 @@ class TestSpawnLaunchInterface(unittest.TestCase):
         self.assertIn(('/robot_description', ['std_msgs/msg/String']), topics)
         self.assertIn(('/tf', ['tf2_msgs/msg/TFMessage']), topics)
         self.assertIn(('/tf_static', ['tf2_msgs/msg/TFMessage']), topics)
+
+    def test_robot_description(self):
+        client = self.node.create_client(GetParameters, 'robot_state_publisher/get_parameters')
+        assert client.wait_for_service(5.)
+        request = GetParameters.Request(names=['robot_description'])
+        recv_robot_description = client.call_async(request)
+        rclpy.spin_until_future_complete(self.node, recv_robot_description, timeout_sec=5.)
+        assert recv_robot_description.done()
 
 
 @launch_testing.post_shutdown_test()
