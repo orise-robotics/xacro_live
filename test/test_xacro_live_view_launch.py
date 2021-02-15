@@ -75,12 +75,12 @@ class TestSpawnLaunchInterface(unittest.TestCase):
         )
 
         expected_nodes = [  # in terms of regex expresions
-            '\/robot_state_publisher',
-            '\/robot_state_publisher',
-            '\/joint_state_publisher_gui',
-            '\/xacro_live',
-            '\/rviz',
-            '\/transform_listener_impl_\w{12}'  # noqa flake8(W605)
+            r'/robot_state_publisher',
+            r'/robot_state_publisher',
+            r'/joint_state_publisher_gui',
+            r'/xacro_live',
+            r'/rviz',
+            r'/transform_listener_impl_\w{12}'
         ]
 
         # Make a regex that matches if any of our regexes match.
