@@ -15,9 +15,11 @@ jobs:
             ros_distribution: dashing
     container:
       image: ${{ matrix.docker_image }}
-      options: -v /tmp/.X11-unix:/tmp/.X11-unix:rw -e DISPLAY
+      env:
+        DISPLAY: :99
     steps:
-      # - uses: actions/checkout@v2
+      - run: sudo apt-get install xvfb
+      - run: Xvfb :99 &
       - uses: ros-tooling/setup-ros@0.1.2
       - uses: ros-tooling/action-ros-ci@0.1.1
         with:
