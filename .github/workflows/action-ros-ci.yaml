@@ -18,7 +18,7 @@ jobs:
       env:
         DISPLAY: :99
     steps:
-      - run: sudo apt-get install xvfb
+      - run: apt-get update -y && apt-get install --no-install-recommends -y xvfb
       - run: Xvfb :99 &
       - uses: ros-tooling/setup-ros@0.1.2
       - uses: ros-tooling/action-ros-ci@0.1.1
