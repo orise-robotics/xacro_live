@@ -1,20 +1,16 @@
 name: build-test
-on: [pull_request]
+on:
+  pull_request:
+  workflow_dispatch:
+  schedule:
+    - cron: '0 0 * * *'
 
 jobs:
   build-test:
     name: build and test
     runs-on: ubuntu-latest
-    strategy:
-      fail-fast: false
-      matrix:
-        include:
-          - docker_image: ubuntu:focal
-            ros_distribution: foxy
-          - docker_image: ubuntu:bionic
-            ros_distribution: dashing
     container:
-      image: ${{ matrix.docker_image }}
+      image: ubuntu:focal
       env:
         DISPLAY: :99
     steps:
@@ -24,5 +20,5 @@ jobs:
       - uses: ros-tooling/action-ros-ci@0.1.1
         with:
           package-name: xacro_live
-          target-ros2-distro: ${{ matrix.ros_distribution }}
+          target-ros2-distro: foxy
           vcs-repo-file-url: ""
