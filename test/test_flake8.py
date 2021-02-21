@@ -12,18 +12,14 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import ament_flake8.main
+from ament_flake8.main import main_with_errors
 import pytest
 
 
 @pytest.mark.flake8
 @pytest.mark.linter
 def test_flake8():
-    try:
-        rc, errors = ament_flake8.main.main_with_errors(argv=[])
-        assert rc == 0, \
-            'Found %d code style errors / warnings:\n' % len(errors) + \
-            '\n'.join(errors)
-    except AttributeError:  # main_with_errors is not available
-        rc = ament_flake8.main.main(argv=[])
-        assert rc == 0, 'Found code style errors / warnings'
+    rc, errors = main_with_errors(argv=[])
+    assert rc == 0, \
+        'Found %d code style errors / warnings:\n' % len(errors) + \
+        '\n'.join(errors)

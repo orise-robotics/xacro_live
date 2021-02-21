@@ -82,19 +82,8 @@ def event_handler_mock():
 
 @pytest.fixture(scope='session')
 def canonicalize_xml():
-    try:
-        import xml.etree.ElementTree
-        canonicalize_fn = xml.etree.ElementTree.canonicalize
-    except AttributeError:
-        import io
-
-        import lxml.etree
-
-        def canonicalize_fn(xml_string: str):
-            et = lxml.etree.parse(io.StringIO(xml_string))
-            return lxml.etree.tostring(et, method='c14n', with_comments=False)
-
-    return canonicalize_fn
+    import xml.etree.ElementTree
+    return xml.etree.ElementTree.canonicalize
 
 
 @pytest.fixture
