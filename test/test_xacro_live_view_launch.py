@@ -48,7 +48,7 @@ def generate_test_description():
             # Start tests right away - no need to wait for anything in this example.
             # In a more complicated launch description, we might want this action happen
             # once some process starts or once some other event happens
-            TimerAction(period=5.0, actions=[ReadyToTest()]),
+            TimerAction(period=10.0, actions=[ReadyToTest()]),
         ]),
         {
             'spawn_launch': spawn_launch
