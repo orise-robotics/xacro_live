@@ -52,7 +52,6 @@ def generate_launch_description():
             parameters=[{
                 'xacro_file': LaunchConfiguration('xacro_file')
             }]
-            # arguments=[LaunchConfiguration('xacro_file')]
         )
     )
     launch_description.add_action(
