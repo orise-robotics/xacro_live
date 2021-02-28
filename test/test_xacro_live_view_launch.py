@@ -45,10 +45,7 @@ def generate_test_description():
     return (
         launch.LaunchDescription([
             spawn_launch,
-            # Start tests right away - no need to wait for anything in this example.
-            # In a more complicated launch description, we might want this action happen
-            # once some process starts or once some other event happens
-            TimerAction(period=10.0, actions=[ReadyToTest()]),
+            TimerAction(period=5., actions=[ReadyToTest()]),
         ]),
         {
             'spawn_launch': spawn_launch
@@ -58,11 +55,13 @@ def generate_test_description():
 
 class TestSpawnLaunchInterface(unittest.TestCase):
 
-    def setUp(self) -> None:
+    @classmethod
+    def setUpClass(cls) -> None:
         rclpy.init()
-        self.node = rclpy.node.Node('test_node')
+        cls.node = rclpy.node.Node('test_node')
 
-    def tearDown(self) -> None:
+    @classmethod
+    def tearDownClass(cls) -> None:
         rclpy.shutdown()
 
     def test_node_names(self, proc_info, spawn_launch):
