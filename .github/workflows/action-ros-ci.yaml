@@ -1,0 +1,24 @@
+name: build-test
+on:
+  pull_request:
+  workflow_dispatch:
+  schedule:
+    - cron: '0 0 * * *'
+
+jobs:
+  build-test:
+    name: build and test
+    runs-on: ubuntu-latest
+    container:
+      image: ubuntu:focal
+      env:
+        DISPLAY: :99
+    steps:
+      - run: apt-get update -y && apt-get install --no-install-recommends -y xvfb
+      - run: Xvfb :99 &
+      - uses: ros-tooling/setup-ros@0.1.2
+      - uses: ros-tooling/action-ros-ci@0.1.1
+        with:
+          package-name: xacro_live
+          target-ros2-distro: foxy
+          vcs-repo-file-url: ""

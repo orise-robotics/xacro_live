@@ -1,0 +1,20 @@
+name: ament-lint
+
+on: [pull_request]
+
+jobs:
+  ament-lint:
+    runs-on: ubuntu-latest
+    container:
+      image: ubuntu:focal
+    strategy:
+      fail-fast: false
+      matrix:
+          linter: [xmllint, flake8, copyright, pep257]
+    steps:
+      - uses: actions/checkout@v2
+      - uses: ros-tooling/setup-ros@master
+      - uses: ros-tooling/action-ros-lint@master
+        with:
+          linter: ${{ matrix.linter }}
+          package-name: xacro_live
