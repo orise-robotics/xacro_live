@@ -21,9 +21,9 @@ from launch.actions import TimerAction
 from launch.launch_description_sources import PythonLaunchDescriptionSource
 from launch.substitutions import PathJoinSubstitution
 from launch_ros.substitutions import FindPackageShare
-import launch_testing
+# import launch_testing
 from launch_testing.actions import ReadyToTest
-import launch_testing.asserts
+# import launch_testing.asserts
 import pytest
 from rcl_interfaces.srv import GetParameters
 import rclpy
@@ -106,9 +106,10 @@ class TestSpawnLaunchInterface(unittest.TestCase):
         assert recv_robot_description.done()
 
 
-@launch_testing.post_shutdown_test()
-class TestProcessTermination(unittest.TestCase):
+# @launch_testing.post_shutdown_test()
+# class TestProcessTermination(unittest.TestCase):
 
-    def test_exit_code(self, proc_info):
-        # rclpy does not exit normally on SIGINT signal (https://github.com/ros2/rclpy/issues/527)
-        launch_testing.asserts.assertExitCodes(proc_info, [launch_testing.asserts.EXIT_OK, -2])
+#     def test_exit_code(self, proc_info):
+#         # rclpy does not exit normally on SIGINT signal
+#         # check https://github.com/ros2/rclpy/issues/527
+#         launch_testing.asserts.assertExitCodes(proc_info, [launch_testing.asserts.EXIT_OK, -2])
