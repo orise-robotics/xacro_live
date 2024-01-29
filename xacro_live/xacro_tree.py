@@ -18,7 +18,6 @@ import xacro
 
 
 class XacroTree:
-
     def __init__(self, root_file: str):
         self.root_file = root_file
 
@@ -53,13 +52,14 @@ class XacroTree:
         """Process the xacro file and update files & directories."""
         xacro.all_includes = []
         self._doc = xacro.process_file(
-            self.root_file, **{
+            self.root_file,
+            **{
                 'output': None,
                 'just_deps': False,
                 'xacro_ns': True,
                 'verbosity': 1,
-                'mappings': {}
-            }
+                'mappings': {},
+            },
         )
         self._files = {os.path.realpath(file) for file in xacro.all_includes + [self.root_file]}
         self._dirs = {os.path.dirname(file) for file in self._files}

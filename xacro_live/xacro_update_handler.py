@@ -13,16 +13,15 @@
 # limitations under the License.
 
 import rclpy.logging as roslog
+from launch_ros.descriptions import ParameterValue
 from rclpy.task import Future
-from watchdog.events import EVENT_TYPE_MODIFIED
-from watchdog.events import FileSystemEventHandler
+from watchdog.events import EVENT_TYPE_MODIFIED, FileSystemEventHandler
 
 from .robot_description_client import RobotDescriptionClient
 from .xacro_observer import XacroObserver
 
 
 class XacroUpdateHandler(FileSystemEventHandler):
-
     def __init__(self, xacro_observer: XacroObserver, client: RobotDescriptionClient):
         self.xacro_observer = xacro_observer
         self.logger = roslog.get_logger('xacro_live')
@@ -41,5 +40,5 @@ class XacroUpdateHandler(FileSystemEventHandler):
                     )
                 except Exception as ex:  # noqa [flake8(B902)] TODO: specify exception types
                     self.future = Future()
-                    self.logger.warn('Invalid update!')
+                    self.logger.warn('on_modified: Invalid update!')
                     self.logger.warn(str(ex))
