@@ -15,18 +15,21 @@
 import rclpy
 import rclpy.logging
 import rclpy.node
+from rcl_interfaces.msg import ParameterDescriptor
 
 from .xacro_observer import XacroObserver
-from .xacro_update_handler import RobotDescriptionClient
-from .xacro_update_handler import XacroUpdateHandler
+from .xacro_update_handler import RobotDescriptionClient, XacroUpdateHandler
 
 
-def main():
-
-    rclpy.init()
+def main(args=None):
+    rclpy.init(args=args)
     node = rclpy.create_node('xacro_live')
 
-    node.declare_parameter('xacro_file')
+    param_descriptor = ParameterDescriptor(
+        description='The file name of the URDF file relative to the ROS2 workspace.'
+    )
+    node.declare_parameter('xacro_file', '', param_descriptor)
+
     observer = XacroObserver(node.get_parameter('xacro_file').get_parameter_value().string_value)
     client = RobotDescriptionClient(node, 'robot_state_publisher')
     event_handler = XacroUpdateHandler(observer, client)

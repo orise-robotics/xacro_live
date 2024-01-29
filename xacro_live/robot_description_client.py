@@ -20,12 +20,11 @@ from rclpy.task import Future
 
 
 class RobotDescriptionClient:
-
     def __init__(
         self,
         client_node: rclpy.node.Node,
         server_node_name='robot_state_publisher',
-        param_name='robot_description'
+        param_name='robot_description',
     ):
         self.request = rcl_interfaces.srv.SetParameters.Request()
 
@@ -38,7 +37,7 @@ class RobotDescriptionClient:
             rcl_interfaces.srv.SetParameters, server_node_name + '/set_parameters'
         )
 
-    def wait_for_service(self, timeout_sec=5.) -> None:
+    def wait_for_service(self, timeout_sec=5.0) -> None:
         if not self.client.wait_for_service(timeout_sec):
             raise RuntimeError('Wait for service timed out')
 

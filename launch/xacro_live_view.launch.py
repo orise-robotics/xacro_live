@@ -16,12 +16,10 @@
 
 from launch import LaunchDescription
 from launch.actions import DeclareLaunchArgument
-from launch.substitutions import Command
-from launch.substitutions import LaunchConfiguration
-from launch.substitutions import PathJoinSubstitution
+from launch.substitutions import Command, LaunchConfiguration, PathJoinSubstitution
 from launch_ros.actions import Node
-from launch_ros.substitutions import ExecutableInPackage
-from launch_ros.substitutions import FindPackageShare
+from launch_ros.descriptions import ParameterValue
+from launch_ros.substitutions import ExecutableInPackage, FindPackageShare
 
 
 def generate_launch_description():
@@ -36,9 +34,9 @@ def generate_launch_description():
         DeclareLaunchArgument(
             name='rviz_config',
             description='Rviz config file.',
-            default_value=PathJoinSubstitution([
-                FindPackageShare('xacro_live'), 'rviz/view_robot.rviz'
-            ])
+            default_value=PathJoinSubstitution(
+                [FindPackageShare('xacro_live'), 'rviz/view_robot.rviz']
+            ),
         )
     )
 
@@ -49,9 +47,9 @@ def generate_launch_description():
             executable='xacro_live',
             name='xacro_live',
             output='screen',
-            parameters=[{
-                'xacro_file': LaunchConfiguration('xacro_file')
-            }]
+            parameters=[
+                {'xacro_file': LaunchConfiguration('xacro_file')},
+            ],
         )
     )
     launch_description.add_action(
@@ -60,13 +58,20 @@ def generate_launch_description():
             executable='robot_state_publisher',
             name='robot_state_publisher',
             output='screen',
-            parameters=[{
-                'robot_description':
-                Command([
-                    ExecutableInPackage(package='xacro', executable='xacro'), ' ',
-                    LaunchConfiguration('xacro_file')
-                ])
-            }]
+            parameters=[
+                {
+                    'robot_description': ParameterValue(
+                        Command(
+                            [
+                                ExecutableInPackage(package='xacro', executable='xacro'),
+                                ' ',
+                                LaunchConfiguration('xacro_file'),
+                            ]
+                        ),
+                        value_type=str,
+                    )
+                }
+            ],
         )
     )
     launch_description.add_action(
@@ -83,7 +88,7 @@ def generate_launch_description():
             executable='rviz2',
             name='rviz',
             output='screen',
-            arguments=['-d', LaunchConfiguration('rviz_config')]
+            arguments=['-d', LaunchConfiguration('rviz_config')],
         ),
     )
 
